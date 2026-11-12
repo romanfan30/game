@@ -1,0 +1,21 @@
+{
+  "name": "cyber-skate-gabber-overdrive-1999",
+  "private": true,
+  "version": "1.0.0",
+  "description": "КИБЕР-СКЕЙТ ПРОТИВ ЯЩЕРОВ: GABBER OVERDRIVE 1999 — браузерный 3D skate-shooter (PS1 стиль, процедурный габбер)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.187.0",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.8"
+  }
+}

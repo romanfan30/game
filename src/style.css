@@ -1,0 +1,211 @@
+/* ==== Базовая оболочка: PS1-canvas на весь экран + неоновый сканлайн-оверлей ==== */
+html, body {
+  margin: 0;
+  height: 100%;
+  background: #0b0518;
+  overflow: hidden;
+  font-family: 'Courier New', 'Lucida Console', monospace;
+  color: #fff;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+canvas#game {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  z-index: 0;
+}
+
+#scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  z-index: 50;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 255, 255, 0.5) 0px,
+    rgba(0, 255, 255, 0.5) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+#ui {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+#ui .pe { pointer-events: auto; }
+
+/* ==== HUD ==== */
+.hud { position: absolute; inset: 0; pointer-events: none; font-weight: 700; text-transform: uppercase; }
+.hud-tl { position: absolute; left: 18px; top: 16px; }
+.hud-tr { position: absolute; right: 18px; top: 14px; text-align: right; }
+.hud-bl { position: absolute; left: 18px; bottom: 16px; }
+.hud-br { position: absolute; right: 18px; bottom: 16px; text-align: right; font-size: 13px; line-height: 1.5; color: #9ffcff; text-shadow: 0 0 6px #00f0ff; }
+
+.score {
+  font-size: 40px;
+  color: #fff3a0;
+  text-shadow: 0 0 6px #ffd700, 0 0 14px #ff9900, 3px 3px 0 #5a0030;
+  letter-spacing: 2px;
+}
+.score small { font-size: 16px; color: #ffd0f0; margin-right: 6px; text-shadow: 0 0 6px #ff007f; }
+.mult {
+  font-size: 54px;
+  color: #39ff14;
+  text-shadow: 0 0 10px #39ff14, 0 0 22px #00ff99, 4px 4px 0 #003b10;
+  transition: transform 0.06s linear;
+  display: inline-block;
+}
+.mult.beat { transform: scale(1.12) rotate(-2deg); }
+.vibe-wrap { width: 260px; height: 14px; border: 2px solid #ff00ff; background: rgba(20, 0, 30, 0.7); margin-top: 6px; margin-left: auto; box-shadow: 0 0 10px #ff00ff; }
+.vibe-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #ff00ff, #00ffcc); }
+.vibe-label { font-size: 13px; color: #ffb8ff; text-shadow: 0 0 6px #ff00ff; margin-top: 2px; }
+
+.hp-wrap { width: 240px; height: 16px; border: 2px solid #ff1133; background: rgba(40, 0, 10, 0.7); box-shadow: 0 0 8px #ff1133; }
+.hp-bar { height: 100%; width: 100%; background: linear-gradient(90deg, #ff1133, #ff8a00); transition: width 0.12s linear; }
+.hp-label { font-size: 14px; color: #ffd0d8; margin-bottom: 4px; text-shadow: 0 0 6px #ff1133; }
+.ammo { font-size: 34px; color: #ffe600; text-shadow: 0 0 8px #ffe600, 3px 3px 0 #553a00; margin-top: 8px; }
+.ammo small { font-size: 16px; color: #fff5a8; }
+.reloading { font-size: 16px; color: #00f0ff; text-shadow: 0 0 8px #00f0ff; min-height: 20px; }
+.slots { display: flex; gap: 8px; margin-top: 8px; }
+.slot {
+  width: 74px; height: 36px; border: 2px solid #5c3a7a; background: rgba(15, 5, 25, 0.75);
+  font-size: 13px; color: #b9a4cf; display: flex; align-items: center; justify-content: center; text-align: center; line-height: 1.1;
+}
+.slot.active { border-color: #00f0ff; color: #fff; box-shadow: 0 0 12px #00f0ff, inset 0 0 8px #00f0ff; background: rgba(0, 60, 80, 0.7); }
+
+.crosshair {
+  position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px;
+  display: none;
+}
+.crosshair::before, .crosshair::after { content: ''; position: absolute; background: #39ff14; box-shadow: 0 0 6px #39ff14; }
+.crosshair::before { left: 16px; top: 0; width: 4px; height: 36px; }
+.crosshair::after { top: 16px; left: 0; height: 4px; width: 36px; }
+.crosshair i { position: absolute; left: 14px; top: 14px; width: 8px; height: 8px; background: #ff00ff; box-shadow: 0 0 10px #ff00ff; }
+
+.lock {
+  position: absolute; width: 34px; height: 34px; margin: -17px 0 0 -17px; display: none;
+  border: 3px solid #39ff14; transform: rotate(45deg); box-shadow: 0 0 12px #39ff14, inset 0 0 8px #39ff14;
+  animation: lockspin 0.8s linear infinite;
+}
+.lock.enemy { border-color: #ff00ff; box-shadow: 0 0 12px #ff00ff, inset 0 0 8px #ff00ff; }
+.lock-label { position: absolute; font-size: 12px; color: #39ff14; text-shadow: 0 0 6px #39ff14; transform: translate(-50%, 24px); white-space: nowrap; }
+@keyframes lockspin { from { transform: rotate(45deg) scale(1); } 50% { transform: rotate(225deg) scale(0.9); } to { transform: rotate(405deg) scale(1); } }
+
+.hitmarker {
+  position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; opacity: 0; transition: opacity 0.18s linear;
+}
+.hitmarker::before, .hitmarker::after { content: ''; position: absolute; left: 13px; top: -4px; width: 4px; height: 38px; background: #fff; transform: rotate(45deg); }
+.hitmarker::after { transform: rotate(-45deg); }
+.hitmarker.on { opacity: 1; }
+
+.rail-hint {
+  position: absolute; transform: translate(-50%, -140%); font-size: 15px; color: #fff; white-space: nowrap;
+  background: #ff0033; padding: 3px 8px; box-shadow: 0 0 12px #ff0033; display: none; text-shadow: 0 0 4px #000;
+}
+
+.callouts { position: absolute; left: 50%; top: 24%; transform: translateX(-50%); width: 80vw; text-align: center; }
+.callout {
+  display: inline-block; font-size: 30px; font-weight: 700; padding: 4px 14px; margin: 4px 0; color: #fff;
+  text-shadow: 3px 3px 0 #2a002a, 0 0 12px #ff00ff; background: rgba(20, 0, 30, 0.5);
+  animation: calloutIn 1.7s ease-out forwards;
+  white-space: nowrap;
+}
+.callout.kill { color: #39ff14; text-shadow: 3px 3px 0 #003b10, 0 0 14px #39ff14; }
+.callout.trick { color: #00f0ff; text-shadow: 3px 3px 0 #002a33, 0 0 14px #00f0ff; }
+.callout.sync { color: #ffe600; font-size: 40px; text-shadow: 3px 3px 0 #553a00, 0 0 18px #ffe600; }
+.callout.rank { color: #ff9900; font-size: 36px; }
+@keyframes calloutIn {
+  0% { opacity: 0; transform: translateY(20px) scale(0.6) rotate(var(--rot, 0deg)); }
+  12% { opacity: 1; transform: translateY(0) scale(1.1) rotate(var(--rot, 0deg)); }
+  20% { transform: translateY(0) scale(1) rotate(var(--rot, 0deg)); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-30px) scale(0.95) rotate(var(--rot, 0deg)); }
+}
+
+.flash-edge { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.2s linear; }
+.flash-sync { box-shadow: inset 0 0 120px 40px rgba(255, 0, 255, 0.85), inset 0 0 40px 10px rgba(0, 255, 204, 0.6); }
+.flash-hurt { background: radial-gradient(ellipse at center, rgba(255, 0, 40, 0) 40%, rgba(255, 0, 40, 0.75) 100%); }
+
+.boss-wrap { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); width: 62vw; text-align: center; display: none; }
+.boss-name { font-size: 18px; color: #ff00ff; text-shadow: 0 0 10px #ff00ff; margin-bottom: 4px; }
+.boss-bar { height: 22px; border: 3px solid #ffe600; background: rgba(30, 0, 20, 0.8); box-shadow: 0 0 14px #ff9900; }
+.boss-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #ff0033, #ff00ff, #ffe600); transition: width 0.25s linear; }
+.boss-phase { font-size: 15px; color: #fff3a0; margin-top: 4px; text-shadow: 0 0 8px #ffe600; }
+.boss-say {
+  position: absolute; left: 50%; top: 110px; transform: translateX(-50%); font-size: 22px; color: #fff; background: rgba(0, 0, 0, 0.6);
+  padding: 8px 16px; border-left: 6px solid #ff00ff; text-shadow: 0 0 8px #ff00ff; white-space: nowrap; opacity: 0; transition: opacity 0.3s;
+}
+.boss-say.on { opacity: 1; }
+
+.level-title { position: absolute; left: 50%; top: 60%; transform: translate(-50%, -50%); font-size: 46px; color: #fff; text-align: center; opacity: 0; transition: opacity 0.6s; text-shadow: 0 0 16px #00f0ff, 4px 4px 0 #002a33; white-space: nowrap; }
+.level-title.on { opacity: 1; }
+.big-msg { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); font-size: 64px; color: #ffe600; text-shadow: 0 0 18px #ffe600, 5px 5px 0 #553a00; opacity: 0; transition: opacity 0.4s; white-space: nowrap; text-align: center; }
+.big-msg.on { opacity: 1; }
+
+.controls-panel {
+  position: absolute; right: 16px; bottom: 16px; font-size: 13px; line-height: 1.45; color: #cfefff; background: rgba(5, 0, 15, 0.7);
+  border: 2px solid #00f0ff; padding: 8px 12px; box-shadow: 0 0 12px #00f0ff; text-align: left; pointer-events: none; text-transform: none; font-weight: 400;
+}
+.controls-panel b { color: #ffe600; }
+
+.hub-hint { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); font-size: 18px; color: #fff; text-shadow: 0 0 10px #00f0ff; white-space: nowrap; text-transform: uppercase; font-weight: 700; }
+
+/* ==== Экраны (меню, пауза, смерть, финал) ==== */
+.screen { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; background: rgba(8, 0, 20, 0.72); pointer-events: auto; z-index: 20; text-align: center; }
+.screen.on { display: flex; }
+.screen h1 { font-size: 46px; margin: 0 0 14px; color: #fff; text-shadow: 0 0 14px #ff00ff, 0 0 30px #ff00ff, 4px 4px 0 #3a0040; letter-spacing: 2px; }
+.screen h2 { font-size: 30px; margin: 10px 0; color: #00f0ff; text-shadow: 0 0 10px #00f0ff; }
+.screen p { font-size: 18px; color: #e8dcff; margin: 6px 0; max-width: 80vw; }
+.screen .rank-big { font-size: 130px; line-height: 1; color: #ffd700; text-shadow: 0 0 20px #ffd700, 0 0 40px #ff9900, 6px 6px 0 #5a2a00; }
+.screen .lose { color: #ff1133; text-shadow: 0 0 16px #ff1133, 4px 4px 0 #3a0008; }
+.btn {
+  font-family: inherit; font-size: 20px; font-weight: 700; text-transform: uppercase; padding: 12px 26px; margin: 8px;
+  background: rgba(20, 0, 35, 0.9); color: #fff; border: 3px solid #00f0ff; box-shadow: 0 0 12px #00f0ff; cursor: pointer;
+}
+.btn:hover { background: #00f0ff; color: #0b0518; }
+.btn.magenta { border-color: #ff00ff; box-shadow: 0 0 12px #ff00ff; }
+.btn.magenta:hover { background: #ff00ff; color: #0b0518; }
+.blink { animation: blink 0.9s steps(2, start) infinite; }
+@keyframes blink { to { visibility: hidden; } }
+
+/* ==== Кастомизация (Гримёрка) ==== */
+.custom-panel {
+  position: absolute; left: 16px; top: 16px; bottom: 16px; width: 380px; overflow-y: auto; pointer-events: auto;
+  background: rgba(10, 0, 25, 0.92); border: 3px solid #ff00ff; box-shadow: 0 0 22px #ff00ff; padding: 12px 14px; z-index: 30; display: none;
+}
+.custom-panel.on { display: block; }
+.custom-panel h2 { margin: 4px 0 10px; font-size: 22px; color: #fff; text-shadow: 0 0 8px #ff00ff; text-transform: uppercase; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.tab { font-family: inherit; font-size: 13px; padding: 6px 8px; background: #1a0630; color: #d8c4ff; border: 2px solid #5c3a7a; cursor: pointer; text-transform: uppercase; }
+.tab.on { background: #ff00ff; color: #0b0518; border-color: #ff00ff; }
+.sect-title { font-size: 14px; color: #00f0ff; margin: 10px 0 6px; text-transform: uppercase; text-shadow: 0 0 6px #00f0ff; }
+.swatches { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+.swatch { height: 34px; border: 3px solid #140020; cursor: pointer; box-sizing: border-box; }
+.swatch.on { border-color: #fff; box-shadow: 0 0 10px #fff; }
+.patterns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.pattern { cursor: pointer; border: 3px solid #140020; background: #000; padding: 0; position: relative; }
+.pattern.on { border-color: #ffe600; box-shadow: 0 0 10px #ffe600; }
+.pattern canvas { width: 100%; height: auto; display: block; image-rendering: pixelated; }
+.pattern span { position: absolute; left: 0; right: 0; bottom: 0; font-size: 10px; background: rgba(0, 0, 0, 0.8); color: #fff; text-transform: uppercase; padding: 2px; }
+.weapon-preview { display: flex; gap: 6px; flex-wrap: wrap; }
+.custom-panel .btn { font-size: 14px; padding: 8px 12px; margin: 6px 0; }
+.custom-panel .note { font-size: 12px; color: #aab0ff; margin-top: 6px; text-transform: none; }
+
+/* ==== Табло рекордов (подсказка на экране) ==== */
+.toast { position: absolute; left: 50%; top: 18px; transform: translateX(-50%); font-size: 18px; color: #39ff14; text-shadow: 0 0 10px #39ff14; display: none; white-space: nowrap; }
+
+/* Дополнения: скорость в HUD и обёртка содержимого экранов */
+.hud-speed { position: absolute; right: 18px; bottom: 16px; font-size: 20px; color: #00f0ff; text-shadow: 0 0 8px #00f0ff, 2px 2px 0 #001a22; letter-spacing: 1px; }
+.hud-speed b { font-size: 34px; color: #fff; margin-left: 4px; }
+.screen-inner { display: flex; flex-direction: column; align-items: center; gap: 4px; max-width: 90vw; }
