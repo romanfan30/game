@@ -389,7 +389,7 @@ export function buildLevel1(scene: THREE.Group, col: Collider, tricks: TrickObje
   return {
     id: 1,
     title: 'УРОВЕНЬ 1: МЕТРО И ФЕЙС-КОНТРОЛЬ',
-    spawn: new THREE.Vector3(0, 0.1, 6),
+    spawn: new THREE.Vector3(0, 0.1, -3),
     heading: 0,
     zones,
     finish: { pos: finishPos, radius: 7 },
@@ -467,7 +467,7 @@ export function buildLevel2(scene: THREE.Group, col: Collider, tricks: TrickObje
   return {
     id: 2,
     title: 'УРОВЕНЬ 2: КИСЛОТНЫЙ VIP-ЦЕХ',
-    spawn: new THREE.Vector3(0, 0.1, 6),
+    spawn: new THREE.Vector3(0, 0.1, -3),
     heading: 0,
     zones,
     finish: { pos: finishPos, radius: 7 },

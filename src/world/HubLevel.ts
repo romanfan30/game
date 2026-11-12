@@ -3,7 +3,7 @@ import { createPS1Material, lambert, pixelTexture, unlit } from '../shaders/PS1M
 import { buildRaver, Rig } from '../enemies/EnemyModels';
 import { DamageInfo, LevelId, LevelRecord, Targetable } from '../types';
 import { ClubVFX } from './ClubVFX';
-import { Collider } from './Collider';
+import { Collider, Surface } from './Collider';
 import { TrackMaterials } from './LevelBuilder';
 import { TrickObjects } from './TrickObjects';
 
@@ -132,7 +132,13 @@ export class HubLevel {
     col.bound = null;
     col.surfaces.length = 0;
     col.walls.length = 0;
-    // Пол и стены
+    // Пол: физическая поверхность под скейтером (без неё падение бесконечно) и визуал
+    col.surfaces.push(new Surface({
+      kind: 'floor',
+      tag: 'hub-floor',
+      origin: new THREE.Vector3(0, 0, 0),
+      shape: { type: 'rect', u0: -H, u1: H, v0: -H, v1: H },
+    }));
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(H * 2, H * 2), mats.floor);
     floor.rotation.x = -Math.PI / 2;
     this.group.add(floor);

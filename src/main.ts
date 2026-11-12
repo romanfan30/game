@@ -593,6 +593,11 @@ class Game {
       }
     }
     // Визуальные параметры модели
+    // Страховка: скейтер провалился под мир — возврат на спавн текущего места
+    if (this.skater.pos.y < -30 && (this.state === 'playing' || this.state === 'hub')) {
+      const spawn = this.mode === 'hub' || !this.level ? this.hub?.spawnPoint() : this.level.spawn;
+      this.skater.reset(spawn ?? new THREE.Vector3(0, 0.1, 0), this.mode === 'hub' || !this.level ? 0 : this.level.heading);
+    }
     this.model.root.position.copy(this.skater.pos);
     this.model.root.rotation.y = this.skater.heading;
     this.model.root.rotation.z = 0;
